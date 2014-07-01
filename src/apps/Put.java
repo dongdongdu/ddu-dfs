@@ -1,9 +1,12 @@
 package apps;
 
+import static java.lang.System.out;
+
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 
 import naming.NamingStubs;
@@ -46,20 +49,35 @@ public class Put extends ClientApplication {
         File source;
         RemotePath destination;
 
-        source = new File(arguments[0]);
+        String sourceFileString = arguments[0];
+        String destiFileString = arguments[1];
+        String current;
 
-        try {
-            destination = new RemotePath(arguments[1]);
-        } catch (IllegalArgumentException e) {
-            throw new ApplicationFailure("cannot parse destination path: " + e.getMessage());
+        if (!(sourceFileString.contains("/") || sourceFileString.contains("\\"))) {
+            try {
+                current = new java.io.File(".").getCanonicalPath();
+                out.println("Current dir:" + current);
+                sourceFileString = current + File.separator + sourceFileString;
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
         }
+        out.println("source file is " + sourceFileString);
 
+        source = new File(sourceFileString);
         // The source must refer to an existing file.
         if (!source.exists())
             throw new ApplicationFailure("source file does not exist");
 
         if (source.isDirectory()) {
             throw new ApplicationFailure("source path refers to a " + "directory");
+        }
+
+        try {
+            destination = new RemotePath(destiFileString);
+        } catch (IllegalArgumentException e) {
+            throw new ApplicationFailure("cannot parse destination path: " + e.getMessage());
         }
 
         // If the destination path is the root directory, then a new file will
@@ -117,7 +135,8 @@ public class Put extends ClientApplication {
             }
 
             // Create a new file with the name of the destination file.
-            naming_server.createFile(destination_path);
+            boolean createRes = naming_server.createFile(destination_path);
+            System.out.println("The destination file" + destination_path + "creation result is " + createRes);
 
             // Obtain the size of the source file.
             long bytes_remaining = source.length();
