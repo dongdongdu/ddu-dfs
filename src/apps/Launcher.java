@@ -47,6 +47,7 @@ public class Launcher {
         applications.put("mkdir", new MakeDirectory());
         applications.put("put", new Put());
         applications.put("append", new Append());
+        applications.put("rndr", new RandomRead());
 
         // applications.put("parse", new Parse());
         applications.put("pwd", new PrintWorkingDirectory());

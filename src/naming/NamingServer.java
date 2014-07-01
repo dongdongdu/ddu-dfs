@@ -206,6 +206,8 @@ public class NamingServer implements Service, Registration {
     @Override
     public boolean createFile(Path file) throws RMIException, FileNotFoundException {
 
+        log("create file is " + file.toString());
+
         log("we are now in createFile");
         checkForNull(file);
         if (file.isRoot()) {
@@ -213,7 +215,32 @@ public class NamingServer implements Service, Registration {
         }
         Path parentPath = file.parent();
         // get the node of the parent directory
+        log("root information");
+
+        for (String key : root.getChildrenMap().keySet()) {
+            out.println(key);
+        }
+
+        log("root children size is " + root.getChildrenMap().size());
+        for (PathNode pathNode : root.children.values()) {
+            out.println(pathNode.toString());
+            out.println("number of readers" + pathNode.getNumReaders());
+        }
+
         PathNode parentNode = root.getLastCompNode(parentPath);
+
+        log("parentNode information");
+
+        for (String key : parentNode.getChildrenMap().keySet()) {
+            out.println(key);
+        }
+
+        log(" parentNode children size is " + parentNode.getChildrenMap().size());
+        for (PathNode pathNode : parentNode.children.values()) {
+            out.println(pathNode.toString());
+            out.println("number of readers" + pathNode.getNumReaders());
+        }
+
         if (parentNode == null || !parentNode.isDirectory()) {
             throw new FileNotFoundException();
         }

@@ -1,13 +1,13 @@
 package apps;
 
-import java.io.EOFException;
+import static Utils.Util.checkSourceFileCurrentDirecotry;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 
 import naming.NamingStubs;
 import naming.Service;
-import Utils.Util;
 import client.DFSInputStream;
 
 /**
@@ -19,7 +19,7 @@ import client.DFSInputStream;
  * server and create the local file, the source file is copied to the destination file. If the destination is a directory, a new
  * file is created in the directory with the same name as the source file.
  */
-public class Get extends ClientApplication {
+public class RandomRead extends ClientApplication {
     /**
      * The size of each request for data cannot exceed <code>BLOCK_SIZE</code>.
      */
@@ -27,7 +27,7 @@ public class Get extends ClientApplication {
 
     /** Application entry point. */
     public static void main(String[] arguments) {
-        new Get().run(arguments);
+        new RandomRead().run(arguments);
     }
 
     /**
@@ -38,9 +38,13 @@ public class Get extends ClientApplication {
      */
     @Override
     public void coreLogic(String[] arguments) throws ApplicationFailure {
-        if (arguments.length != 2) {
-            throw new ApplicationFailure("usage: get upper_source_file " + "local_destination_file");
+        if (arguments.length != 4) {
+            throw new ApplicationFailure("usage: rndr upper_source_file offset length local_destination_file \n"
+                    + "example: rndr 1.txt 5 10 c:/rndr.txt(rndr.txt)");
         }
+
+        int offset = Integer.parseInt(arguments[1]);
+        int lenth = Integer.parseInt(arguments[2]);
 
         // Parse the source and destination paths.
         RemotePath source;
@@ -56,9 +60,8 @@ public class Get extends ClientApplication {
         if (source.path.isRoot())
             throw new ApplicationFailure("source is the root directory");
 
-        String localString = arguments[1];
-        localString = Util.checkSourceFileCurrentDirecotry(localString);
-
+        String localString = arguments[3];
+        localString = checkSourceFileCurrentDirecotry(localString);
         destination = new File(localString);
 
         // If the destination file is a directory, get a path to a file in that
@@ -84,28 +87,13 @@ public class Get extends ClientApplication {
         OutputStream output_stream = null;
 
         try {
-            read_buffer = new byte[BLOCK_SIZE];
+
             output_stream = new FileOutputStream(destination);
             input_stream = new DFSInputStream(naming_server, source.path);
 
-            int bytes_remaining = input_stream.available();
-            int bytes_to_transfer;
-            int bytes_read;
+            read_buffer = input_stream.randomRead(offset, lenth);
+            output_stream.write(read_buffer);
 
-            while (bytes_remaining > 0) {
-                bytes_to_transfer = bytes_remaining;
-                if (bytes_to_transfer > BLOCK_SIZE)
-                    bytes_to_transfer = BLOCK_SIZE;
-
-                bytes_read = input_stream.read(read_buffer, 0, bytes_to_transfer);
-                bytes_remaining = input_stream.available();
-
-                if (bytes_read <= 0)
-                    throw new EOFException("unexpected end of file");
-
-                // Write only as many bytes as were actually read.
-                output_stream.write(read_buffer, 0, bytes_read);
-            }
         } catch (Throwable t) {
             throw new ApplicationFailure("cannot transfer " + source + ": " + t.getMessage());
         } finally {

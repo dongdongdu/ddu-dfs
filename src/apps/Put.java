@@ -1,11 +1,10 @@
 package apps;
 
-import static java.lang.System.out;
+import static Utils.Util.checkSourceFileCurrentDirecotry;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 
 import naming.NamingStubs;
@@ -52,17 +51,7 @@ public class Put extends ClientApplication {
         String destiFileString = arguments[1];
         String current;
 
-        if (!(sourceFileString.contains("/") || sourceFileString.contains("\\"))) {
-            try {
-                current = new java.io.File(".").getCanonicalPath();
-                out.println("Current dir:" + current);
-                sourceFileString = current + File.separator + sourceFileString;
-            } catch (IOException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
-        }
-        out.println("source file is " + sourceFileString);
+        sourceFileString = checkSourceFileCurrentDirecotry(sourceFileString);
 
         source = new File(sourceFileString);
         // The source must refer to an existing file.
@@ -176,4 +165,5 @@ public class Put extends ClientApplication {
             }
         }
     }
+
 }

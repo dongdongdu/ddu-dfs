@@ -1,10 +1,9 @@
 package apps;
 
-import static java.lang.System.out;
+import static Utils.Util.checkSourceFileCurrentDirecotry;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
 import naming.NamingStubs;
@@ -40,7 +39,7 @@ public class Append extends ClientApplication {
     @Override
     public void coreLogic(String[] arguments) throws ApplicationFailure {
         if (arguments.length != 2) {
-            throw new ApplicationFailure("usage: append source_file destination_file");
+            throw new ApplicationFailure("usage: append local_source_file upper_destination_file");
         }
 
         // Parse the source and destination paths.
@@ -50,7 +49,7 @@ public class Append extends ClientApplication {
         String sourceFileString = arguments[0];
         String destiFileString = arguments[1];
 
-        sourceFileString = checkInputFilename(sourceFileString);
+        sourceFileString = checkSourceFileCurrentDirecotry(sourceFileString);
 
         source = new File(sourceFileString);
         // The source must refer to an existing file.
@@ -144,19 +143,4 @@ public class Append extends ClientApplication {
         }
     }
 
-    private String checkInputFilename(String sourceFileString) {
-        String current;
-        if (!(sourceFileString.contains("/") || sourceFileString.contains("\\"))) {
-            try {
-                current = new java.io.File(".").getCanonicalPath();
-                out.println("Current dir:" + current);
-                sourceFileString = current + File.separator + sourceFileString;
-            } catch (IOException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
-        }
-        out.println("source file is " + sourceFileString);
-        return sourceFileString;
-    }
 }

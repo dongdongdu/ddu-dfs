@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
@@ -315,4 +316,28 @@ public class StorageServer implements Storage, Command {
         }
         return true;
     }
+
+    @Override
+    public synchronized byte[] randomRead(Path file, int offset, int length) throws RMIException, FileNotFoundException,
+            IOException {
+        File f = file.toFile(root);
+        if (!f.exists() || f.isDirectory()) {
+            throw new FileNotFoundException("File cannot be found or refers to" + "a directory");
+        }
+        if ((offset < 0) || (length < 0) || (offset + length > f.length())) {
+            throw new IndexOutOfBoundsException("Sequence specified is outside"
+                    + "of the bounds of the file, or length is negative");
+        }
+        // reads from the file using FileInputStream and returns the content
+        RandomAccessFile raf = new RandomAccessFile(f, "r");
+
+        System.out.println("RandomAccessFile pointer start at " + raf.getFilePointer());
+        raf.seek(offset);
+        System.out.println("RandomAccessFile pointer now at " + raf.getFilePointer());
+
+        byte[] output = new byte[length];
+        raf.read(output);
+        return output;
+    }
+
 }

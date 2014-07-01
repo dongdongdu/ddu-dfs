@@ -247,4 +247,10 @@ class TestStorageServer implements Storage, Command {
 
     }
 
+    @Override
+    public byte[] randomRead(Path file, int offset, int length) throws FileNotFoundException, IOException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }
