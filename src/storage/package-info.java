@@ -5,6 +5,8 @@
     Storage is backed by the underlying local filesystem on the machine on which
     each server is running.
 
+
+
     <p>
     Upon startup, the storage server recursively lists a certain directory on
     its local filesystem. It transmits the resulting directory tree to the
@@ -19,3 +21,4 @@
     or its exact network address, so long as it is reachable by the client.
  */
 package storage;
+

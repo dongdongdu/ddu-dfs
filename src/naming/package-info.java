@@ -1,5 +1,7 @@
 /** Naming (metadata) server.
 
+
+
     <p>
     The filesystem <em>naming server</em> maintains the common directory tree.
     Separate <em>storage servers</em> provide storage space for files.
@@ -49,3 +51,4 @@
     are RMI skeletons running at well-known ports.
  */
 package naming;
+
