@@ -1,6 +1,7 @@
 package client;
 
 import static Utils.Util.log;
+import static java.lang.System.out;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -143,6 +144,28 @@ public class DFSOutputStream extends OutputStream {
     }
 
     /**
+     * A new method implemented by DDu, does not consider buffer.
+     */
+    public void write(byte[] data) {
+        // Send the write request to the server. If the write request succeds,
+        // advance the stream offset.
+
+        try {
+            storage_server.write(path, data);
+        } catch (RMIException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+    }
+
+    /**
      * Writes bytes from a buffer to the output stream.
      * 
      * <p>
@@ -170,6 +193,10 @@ public class DFSOutputStream extends OutputStream {
         if (closed) {
             throw new IOException("distributed filesystem output stream " + "already closed");
         }
+
+        out.println("write buffer is " + new String(buffer));
+        out.println("write buffer_offset is " + buffer_offset);
+        out.println("write write_length is " + write_length);
 
         // Check that all the arguments are valid.
         if (buffer == null)
@@ -209,8 +236,13 @@ public class DFSOutputStream extends OutputStream {
         // Send the write request to the server. If the write request succeds,
         // advance the stream offset.
         try {
+            System.out.println("DFSOutputStream offset first is " + offset);
+
             storage_server.write(path, offset, data);
             offset += write_length;
+
+            System.out.println("DFSOutputStream offset end is " + offset);
+
         } catch (FileNotFoundException e) {
             throw new IOException("file missing on storage server", e);
         } catch (RMIException e) {

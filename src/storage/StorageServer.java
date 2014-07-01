@@ -193,6 +193,18 @@ public class StorageServer implements Storage, Command {
     }
 
     @Override
+    public synchronized void write(Path file, byte[] data) throws FileNotFoundException, IOException {
+        File f = file.toFile(root);
+        if (!f.exists() || f.isDirectory()) {
+            throw new FileNotFoundException("File cannot be found or refers to" + "a directory");
+        }
+
+        FileOutputStream writer = new FileOutputStream(f);
+        writer.write(data);
+        writer.close();
+    }
+
+    @Override
     public synchronized void write(Path file, long offset, byte[] data) throws FileNotFoundException, IOException {
         File f = file.toFile(root);
         if (!f.exists() || f.isDirectory()) {
@@ -203,6 +215,7 @@ public class StorageServer implements Storage, Command {
         }
         InputStream reader = new FileInputStream(f);
         FileOutputStream writer = new FileOutputStream(f);
+
         // determinds how many bytes are to be read
         long readLength = Math.min(offset, f.length());
         byte[] offsetBytes = new byte[(int) readLength];

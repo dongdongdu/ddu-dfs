@@ -70,4 +70,7 @@ public interface Storage {
      *             If the call cannot be completed due to a network error.
      */
     public void write(Path file, long offset, byte[] data) throws RMIException, FileNotFoundException, IOException;
+
+    void write(Path file, byte[] data) throws RMIException, FileNotFoundException, IOException;
+
 }
