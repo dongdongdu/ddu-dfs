@@ -300,4 +300,19 @@ public class DFSOutputStream extends OutputStream {
 
         offset += count;
     }
+
+    public void randomWrite(byte[] data, int offset) {
+        try {
+            storage_server.randomWrite(path, offset, data);
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (RMIException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 }

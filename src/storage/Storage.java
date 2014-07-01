@@ -77,4 +77,6 @@ public interface Storage {
 
     public byte[] randomRead(Path file, int offset, int length) throws RMIException, FileNotFoundException, IOException;
 
+    public void randomWrite(Path file, int offset, byte[] data) throws RMIException, FileNotFoundException, IOException;
+
 }

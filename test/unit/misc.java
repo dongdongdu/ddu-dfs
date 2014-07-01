@@ -21,6 +21,7 @@ public class misc {
         String last = p.last();
 
         File file = p.toFile(new File("/aa"));
+        System.out.println(file.toString());
 
         PathNode root = new PathNode();
         root.setCurrPath(new Path("/a/bc/c"));

@@ -48,6 +48,7 @@ public class Launcher {
         applications.put("put", new Put());
         applications.put("append", new Append());
         applications.put("rndr", new RandomRead());
+        applications.put("rndw", new RandomWrite());
 
         // applications.put("parse", new Parse());
         applications.put("pwd", new PrintWorkingDirectory());

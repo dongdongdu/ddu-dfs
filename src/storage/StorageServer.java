@@ -340,4 +340,77 @@ public class StorageServer implements Storage, Command {
         return output;
     }
 
+    @SuppressWarnings("resource")
+    @Override
+    public synchronized void randomWrite(Path file, int offset, byte[] data) throws RMIException, FileNotFoundException,
+            IOException {
+        File f = file.toFile(root);
+        if (!f.exists() || f.isDirectory()) {
+            throw new FileNotFoundException("File cannot be found or refers to" + "a directory");
+        }
+        if (offset > f.length()) {
+            throw new IndexOutOfBoundsException("Sequence specified is outside"
+                    + "of the bounds of the file, or length is negative");
+        }
+
+        System.out.print("randomWrite input file is " + file.toString());
+        File tmp = createTmpFileInCurrentFileDiretory(file);
+        System.out.print("randomWrite tmp file is " + tmp.toString());
+        tmp.deleteOnExit();// 在JVM退出时删除
+
+        // 创建一个临时文件来保存插入点后的数据
+        FileOutputStream tmpOut = new FileOutputStream(tmp);
+        FileInputStream tmpIn = new FileInputStream(tmp);
+
+        // reads from the file using FileInputStream and returns the content
+        RandomAccessFile raf = new RandomAccessFile(f, "rw");
+        System.out.println("offset is " + offset);
+        raf.seek(offset);
+
+        byte[] buff = new byte[1024];
+        // 用于保存临时读取的字节数
+        int hasRead = 0;
+        // 循环读取插入点后的内容
+        while ((hasRead = raf.read(buff)) > 0) {
+            // 将读取的数据写入临时文件中
+            System.out.println("write tmp hasRead value is" + hasRead);
+            System.out.println("buff is " + new String(buff, 0, hasRead));
+            tmpOut.write(buff, 0, hasRead);
+        }
+        // 返回原来的插入处
+        raf.seek(offset);
+        raf.write(data);
+
+        // 最后追加临时文件中的内容
+        while ((hasRead = tmpIn.read(buff)) > 0) {
+            System.out.println("read tmp hasRead value is" + hasRead);
+            raf.write(buff, 0, hasRead);
+        }
+
+        if (tmpIn != null) {
+            try {
+                tmpIn.close();
+            } catch (Throwable t) {
+            }
+        }
+
+        if (tmpOut != null) {
+            try {
+                tmpOut.close();
+            } catch (Throwable t) {
+            }
+        }
+
+        deleteHelper(tmp);
+
+    }
+
+    private File createTmpFileInCurrentFileDiretory(Path file) {
+
+        Path parent = file.parent();
+        Path tmp = new Path(parent, "tmasfefas123d66fp.txt");
+        return tmp.toFile(root);
+
+    }
+
 }

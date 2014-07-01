@@ -253,4 +253,10 @@ class TestStorageServer implements Storage, Command {
         return null;
     }
 
+    @Override
+    public void randomWrite(Path file, int offset, byte[] data) throws RMIException, FileNotFoundException, IOException {
+        // TODO Auto-generated method stub
+
+    }
+
 }
