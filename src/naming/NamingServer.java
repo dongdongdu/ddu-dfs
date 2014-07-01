@@ -339,7 +339,7 @@ public class NamingServer implements Service, Registration {
         out.println("-----------");
 
         out.print("pathStorageMap contains key is " + pathStorageMap.containsKey(file));
-        System.out.print("pathStorageMap get storage set size is " + pathStorageMap.get(file).size());
+        System.out.println("pathStorageMap get storage set size is " + pathStorageMap.get(file).size());
 
         if (!pathStorageMap.containsKey(file) || pathStorageMap.get(file).isEmpty()) {
             Util.log("File does not exist!");

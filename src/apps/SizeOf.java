@@ -19,6 +19,7 @@ public class SizeOf extends ClientApplication {
         }
 
         String filename = arguments[0];
+        System.out.println("input file name is " + filename);
 
         RemotePath source;
 
@@ -36,16 +37,6 @@ public class SizeOf extends ClientApplication {
         Service naming_server = NamingStubs.service(source.hostname);
 
         Path file = source.path;
-
-        try {
-            if (naming_server.isDirectory(file)) {
-                throw new ApplicationFailure(source + " is a " + "directory");
-            }
-        } catch (FileNotFoundException e) {
-            throw new ApplicationFailure("The file " + filename + " does not exists!");
-        } catch (RMIException e) {
-            e.printStackTrace();
-        }
 
         try {
             naming_server.lock(file.parent(), false);
