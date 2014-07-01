@@ -88,6 +88,7 @@ public class Touch extends ClientApplication {
             // case.
             try {
                 naming_server.createFile(file.path);
+                System.out.println(remote_file + " has been created!");
             } catch (Throwable t) {
             }
 

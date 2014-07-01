@@ -37,15 +37,16 @@ public class Launcher {
         applications.put("storage", new StorageServerApp());
         applications.put("cd", new ChangeDirectoryDummy());
         applications.put("ls", new List());
-        applications.put("touch", new Touch());
-        applications.put("mkdir", new MakeDirectory());
-        applications.put("rm", new Remove());
 
-        applications.put("sizeof", new SizeOf());
-        applications.put("exist", new Exist());
-
+        applications.put("add", new Touch());
         applications.put("get", new Get());
+        applications.put("rm", new Remove());
+        applications.put("exist", new Exist());
+        applications.put("sizeof", new SizeOf());
+
+        applications.put("mkdir", new MakeDirectory());
         applications.put("put", new Put());
+
         applications.put("parse", new Parse());
         applications.put("pwd", new PrintWorkingDirectory());
 
