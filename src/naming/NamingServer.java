@@ -1,6 +1,7 @@
 package naming;
 
 import static Utils.Util.log;
+import static java.lang.System.out;
 
 import java.io.FileNotFoundException;
 import java.net.InetSocketAddress;
@@ -14,6 +15,7 @@ import rmi.RMIException;
 import rmi.Skeleton;
 import storage.Command;
 import storage.Storage;
+import Utils.Util;
 
 import common.Path;
 
@@ -225,16 +227,22 @@ public class NamingServer implements Service, Registration {
         parentNode.getChildrenMap().put(file.last(), pN);
         // adds the file to random storage server
         if (storageCmdMap.size() >= 1) {
-            Command cmd = storageCmdMap.get(storageCmdMap.keySet().iterator().next());
+            Set<Storage> storages = storageCmdMap.keySet();
+            Storage rndStorage = storages.iterator().next();
+            Command cmd = storageCmdMap.get(rndStorage);
             try {
                 cmd.create(file);
             } catch (RMIException e) {
                 return false;
             }
+            // Then we added new created file to pathStorageMap
+            pathStorageMap.put(file, storages);
+
             return true;
         } else {
             throw new IllegalStateException();
         }
+
     }
 
     @Override
@@ -322,7 +330,19 @@ public class NamingServer implements Service, Registration {
     public Storage getStorage(Path file) throws FileNotFoundException {
         checkForNull(file);
 
+        out.println("input file is " + file);
+
+        out.println("existing path keys are : ----------");
+        for (Path path : pathStorageMap.keySet()) {
+            out.println(path);
+        }
+        out.println("-----------");
+
+        out.print("pathStorageMap contains key is " + pathStorageMap.containsKey(file));
+        System.out.print("pathStorageMap get storage set size is " + pathStorageMap.get(file).size());
+
         if (!pathStorageMap.containsKey(file) || pathStorageMap.get(file).isEmpty()) {
+            Util.log("File does not exist!");
             throw new FileNotFoundException("File does not exist");
         }
         // retrieves storage stub from the pathStorageMap
@@ -372,8 +392,10 @@ public class NamingServer implements Service, Registration {
     // checks parameters for null values, throws NullPointerException if nulls
     private void checkForNull(Object... objs) {
         for (Object obj : objs) {
-            if (obj == null)
+            if (obj == null) {
+                Util.log("input object is null");
                 throw new NullPointerException("cannot have a null parameter");
+            }
         }
     }
 
