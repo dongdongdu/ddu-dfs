@@ -42,6 +42,7 @@ public class Launcher {
         applications.put("rm", new Remove());
 
         applications.put("sizeof", new SizeOf());
+        applications.put("exist", new Exist());
 
         applications.put("get", new Get());
         applications.put("put", new Put());
