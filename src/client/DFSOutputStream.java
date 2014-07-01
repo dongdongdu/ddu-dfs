@@ -143,6 +143,21 @@ public class DFSOutputStream extends OutputStream {
         closed = true;
     }
 
+    public void append(byte[] data) {
+        try {
+            storage_server.append(path, data);
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (RMIException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
     /**
      * A new method implemented by DDu, does not consider buffer.
      */
@@ -152,13 +167,13 @@ public class DFSOutputStream extends OutputStream {
 
         try {
             storage_server.write(path, data);
-        } catch (RMIException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (FileNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (RMIException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }

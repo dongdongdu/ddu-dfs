@@ -240,4 +240,11 @@ class TestStorageServer implements Storage, Command {
         // TODO Auto-generated method stub
 
     }
+
+    @Override
+    public void append(Path file, byte[] data) throws RMIException, FileNotFoundException, IOException {
+        // TODO Auto-generated method stub
+
+    }
+
 }

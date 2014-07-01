@@ -71,6 +71,8 @@ public interface Storage {
      */
     public void write(Path file, long offset, byte[] data) throws RMIException, FileNotFoundException, IOException;
 
-    void write(Path file, byte[] data) throws RMIException, FileNotFoundException, IOException;
+    public void write(Path file, byte[] data) throws RMIException, FileNotFoundException, IOException;
+
+    public void append(Path file, byte[] data) throws RMIException, FileNotFoundException, IOException;
 
 }

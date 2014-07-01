@@ -2,17 +2,13 @@ package apps;
 
 import static java.lang.System.out;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
 import naming.NamingStubs;
 import naming.Service;
-import rmi.RMIException;
-import storage.Storage;
 import client.DFSOutputStream;
 
 import common.Path;
@@ -109,56 +105,18 @@ public class Append extends ClientApplication {
             // path as provided, or if the path refers to a directory, then a
             // new file within that directory.
             Path destination_path = destination.path;
-            long desti_file_size = 0;
-            try {
-                Storage storage = naming_server.getStorage(destination_path);
-                desti_file_size = storage.size(destination_path);
-                System.out.print("The size of " + destiFileString + " is " + desti_file_size);
-            } catch (FileNotFoundException e) {
-                throw new ApplicationFailure("The file " + destiFileString + " does not exists!");
-            } catch (RMIException e) {
-                e.printStackTrace();
-            }
 
             // Obtain the size of the source file.
-            long bytes_remaining = source.length();
+            long souce_size = source.length();
 
             // Allocate the temporary read buffer and open streams.
-            read_buffer = new byte[BLOCK_SIZE];
+            read_buffer = new byte[(int) souce_size];
             input_stream = new FileInputStream(source);
             output_stream = new DFSOutputStream(naming_server, destination_path);
 
-            // As long as there are bytes remaining to be copied from the
-            // source file, copy at most BLOCK_SIZE bytes at a time. Read
-            // the bytes to be transferred in a single block into the buffer
-            // read_buffer, and then send the buffer to the storage server.
-            while (bytes_remaining > 0) {
-                int bytes_to_transfer = BLOCK_SIZE;
-                if (bytes_remaining < BLOCK_SIZE)
-                    bytes_to_transfer = (int) bytes_remaining;
+            input_stream.read(read_buffer);
+            output_stream.append(read_buffer);
 
-                int bytes_loaded = 0;
-                int bytes_read;
-
-                // Reading from the local file is done in a loop, because
-                // the read call for local files does not guarantee that the
-                // number of bytes read will be equal to the number of bytes
-                // requested, even if care has been taken to avoid premature
-                // end of file conditions.
-                while (bytes_loaded < bytes_to_transfer) {
-                    bytes_read = input_stream.read(read_buffer, bytes_loaded, bytes_to_transfer - bytes_loaded);
-
-                    if (bytes_read <= 0)
-                        throw new EOFException("unexpected end of file");
-
-                    bytes_loaded += bytes_read;
-                }
-
-                output_stream.write(read_buffer, 0, bytes_to_transfer);
-                bytes_remaining -= bytes_to_transfer;
-            }
-        } catch (ApplicationFailure e) {
-            throw e;
         } catch (Throwable t) {
             throw new ApplicationFailure("cannot transfer " + source + ": " + t.getMessage());
         } finally {

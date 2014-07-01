@@ -193,13 +193,23 @@ public class StorageServer implements Storage, Command {
     }
 
     @Override
-    public synchronized void write(Path file, byte[] data) throws FileNotFoundException, IOException {
+    public synchronized void append(Path file, byte[] data) throws RMIException, FileNotFoundException, IOException {
+        this.write(file, data, true);
+    }
+
+    @Override
+    public synchronized void write(Path file, byte[] data) throws RMIException, FileNotFoundException, IOException {
+        this.write(file, data, false);
+    }
+
+    private synchronized void write(Path file, byte[] data, boolean append) throws RMIException, FileNotFoundException,
+            IOException {
         File f = file.toFile(root);
         if (!f.exists() || f.isDirectory()) {
             throw new FileNotFoundException("File cannot be found or refers to" + "a directory");
         }
 
-        FileOutputStream writer = new FileOutputStream(f);
+        FileOutputStream writer = new FileOutputStream(f, append);
         writer.write(data);
         writer.close();
     }
