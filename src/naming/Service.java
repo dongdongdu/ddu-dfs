@@ -3,6 +3,7 @@ package naming;
 import java.io.FileNotFoundException;
 
 import rmi.RMIException;
+import storage.Command;
 import storage.Storage;
 
 import common.Path;
@@ -206,4 +207,8 @@ public interface Service {
     public Storage getStorage(Path file) throws RMIException, FileNotFoundException;
 
     public int getStorageServerCount() throws RMIException;
+
+    public Command getExistCommand(Storage aStorage) throws RMIException;
+
+    public Storage getADiffStorage(Storage aStorage) throws RMIException;
 }

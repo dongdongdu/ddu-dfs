@@ -452,4 +452,10 @@ public class StorageServer implements Storage, Command {
 
     }
 
+    @Override
+    public boolean isFileExist(Path path) throws RMIException {
+        File file = path.toFile(root);
+        return file.exists();
+    }
+
 }

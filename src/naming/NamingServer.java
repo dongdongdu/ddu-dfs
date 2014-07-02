@@ -363,29 +363,28 @@ public class NamingServer implements Service, Registration {
     @Override
     public Storage getStorage(Path file) throws FileNotFoundException {
         checkForNull(file);
-
-        out.println("input file is " + file);
-
-        out.println("existing path keys are : ----------");
-        for (Path path : pathStorageMap.keySet()) {
-            out.println(path);
-        }
-        out.println("-----------");
-
-        out.print("pathStorageMap contains key is " + pathStorageMap.containsKey(file));
-        System.out.println("pathStorageMap get storage set size is " + pathStorageMap.get(file).size());
-
         if (!pathStorageMap.containsKey(file) || pathStorageMap.get(file).isEmpty()) {
             Util.log("File does not exist!");
             throw new FileNotFoundException("File does not exist");
         }
         // retrieves storage stub from the pathStorageMap
-        Set<Storage> hasFile = pathStorageMap.get(file);
+        Set<Storage> hasFileStorages = pathStorageMap.get(file);
+        Storage retStorage = null;
 
-        if (!hasFile.iterator().hasNext()) {
-            throw new FileNotFoundException();
+        for (Storage storage : hasFileStorages) {
+            try {
+                if (storage.isFileExist(file)) {
+                    retStorage = storage;
+                }
+            } catch (RMIException e) {
+                out.println("Caught a RMI exception when run storage server method isFileExists!");
+                // caught exception, but continue;
+            }
+        }
+        if (retStorage != null) {
+            return retStorage;
         } else {
-            return hasFile.iterator().next();
+            throw new FileNotFoundException();
         }
     }
 
@@ -487,7 +486,8 @@ public class NamingServer implements Service, Registration {
         return storageSets.size();
     }
 
-    private Storage getADiffStorage(Storage aStorage) {
+    @Override
+    public Storage getADiffStorage(Storage aStorage) {
 
         Storage ret = null;
 
@@ -523,7 +523,8 @@ public class NamingServer implements Service, Registration {
         return ret;
     }
 
-    private Command getExistCommand(Storage aStorage) {
+    @Override
+    public Command getExistCommand(Storage aStorage) {
 
         Command ret = null;
         if (storageCmdMap.containsKey(aStorage)) {

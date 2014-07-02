@@ -81,4 +81,6 @@ public interface Storage {
 
     public byte[] read(Path file) throws RMIException, FileNotFoundException, IOException;
 
+    public boolean isFileExist(Path path) throws RMIException;
+
 }

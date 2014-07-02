@@ -264,4 +264,10 @@ class TestStorageServer implements Storage, Command {
         return null;
     }
 
+    @Override
+    public boolean isFileExist(Path path) throws RMIException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }
