@@ -67,7 +67,6 @@ public class Path implements Iterable<String>, Comparable<Path>, Serializable {
      *             If the path string does not begin with a forward slash, or if the path contains a colon character.
      */
     public Path(String path) {
-        System.out.println(path);
         // check for illegal argument conditions
         if ((!path.startsWith("/")) || path.contains(":")) {
             throw new IllegalArgumentException("Path string does not begin with"

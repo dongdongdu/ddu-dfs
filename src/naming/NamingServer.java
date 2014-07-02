@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
@@ -195,11 +196,22 @@ public class NamingServer implements Service, Registration {
         if (pN == null || !pN.isDirectory())
             throw new FileNotFoundException("Given path does not refer to a " + "directory");
 
+        HashMap<String, PathNode> map = pN.getChildrenMap();
+
         // adds all the children of pN as contents of the directory
-        for (String entry : pN.getChildrenMap().keySet())
-            contents.add(entry);
+        for (String entry : map.keySet()) {
+            // add a additional slash in front of the directory
+            int size = map.get(entry).getChildrenMap().size();
+            if (size > 0) {
+                // a directory has more than 0 childrenMap size
+                contents.add("/" + entry);
+            } else {
+                contents.add(entry);
+            }
+        }
         String[] ret = new String[contents.size()];
         int index = 0;
+
         for (String s : contents) {
             ret[index] = s;
             index++;
