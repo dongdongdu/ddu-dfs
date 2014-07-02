@@ -222,40 +222,13 @@ public class NamingServer implements Service, Registration {
     @Override
     public boolean createFile(Path file) throws RMIException, FileNotFoundException {
 
-        log("create file is " + file.toString());
-
-        log("we are now in createFile");
         checkForNull(file);
         if (file.isRoot()) {
             return false;
         }
         Path parentPath = file.parent();
         // get the node of the parent directory
-        log("root information");
-
-        for (String key : root.getChildrenMap().keySet()) {
-            out.println(key);
-        }
-
-        log("root children size is " + root.getChildrenMap().size());
-        for (PathNode pathNode : root.children.values()) {
-            out.println(pathNode.toString());
-            out.println("number of readers" + pathNode.getNumReaders());
-        }
-
         PathNode parentNode = root.getLastCompNode(parentPath);
-
-        log("parentNode information");
-
-        for (String key : parentNode.getChildrenMap().keySet()) {
-            out.println(key);
-        }
-
-        log(" parentNode children size is " + parentNode.getChildrenMap().size());
-        for (PathNode pathNode : parentNode.children.values()) {
-            out.println(pathNode.toString());
-            out.println("number of readers" + pathNode.getNumReaders());
-        }
 
         if (parentNode == null || !parentNode.isDirectory()) {
             throw new FileNotFoundException();
@@ -270,16 +243,34 @@ public class NamingServer implements Service, Registration {
         parentNode.getChildrenMap().put(file.last(), pN);
         // adds the file to random storage server
         if (storageCmdMap.size() >= 1) {
-            Set<Storage> storages = storageCmdMap.keySet();
-            Storage rndStorage = storages.iterator().next();
-            Command cmd = storageCmdMap.get(rndStorage);
+            Storage aStorage = storageSets.iterator().next();
+            Command cmd = storageCmdMap.get(aStorage);
             try {
                 cmd.create(file);
             } catch (RMIException e) {
                 return false;
             }
+
+            Storage secondStorage = null;
+            if (storageSets.size() > 1) {
+                // If we have more than 1 storage server, make the 2nd copy.
+                secondStorage = getADiffStorage(aStorage);
+                Command secondCommand = storageCmdMap.get(secondStorage);
+                try {
+                    secondCommand.create(file);
+                } catch (RMIException e) {
+                    return false;
+                }
+            }
+
+            Set<Storage> fileStorageSets = Collections.newSetFromMap(new ConcurrentHashMap<Storage, Boolean>());
+            fileStorageSets.add(aStorage);
+            if (secondStorage != null) {
+                fileStorageSets.add(secondStorage);
+            }
+
             // Then we added new created file to pathStorageMap
-            pathStorageMap.put(file, storages);
+            pathStorageMap.put(file, fileStorageSets);
 
             return true;
         } else {
