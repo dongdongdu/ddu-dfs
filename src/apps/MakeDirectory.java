@@ -82,8 +82,11 @@ public class MakeDirectory extends ClientApplication {
         // Create the new directory.
         try {
 
-            if (!naming_server.createDirectory(directory.path)) {
+            if (naming_server.createDirectory(directory.path)) {
+                System.out.println("direcotry (" + remote_directory + ") has been created successfully!");
+            } else {
                 throw new ApplicationFailure("cannot create directory " + directory);
+
             }
         } catch (ApplicationFailure e) {
             throw e;
