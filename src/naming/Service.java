@@ -204,4 +204,6 @@ public interface Service {
      *             If the call cannot be completed due to a network error.
      */
     public Storage getStorage(Path file) throws RMIException, FileNotFoundException;
+
+    public int getStorageServerCount() throws RMIException;
 }

@@ -39,6 +39,7 @@ import common.Path;
  */
 public class NamingServer implements Service, Registration {
     PathNode root;
+    int storageServerCount;
     ConcurrentHashMap<Path, Set<Storage>> pathStorageMap;
     ConcurrentHashMap<Storage, Command> storageCmdMap;
     Skeleton<Registration> regisSkel;
@@ -55,6 +56,7 @@ public class NamingServer implements Service, Registration {
         rootnode.setCurrPath(new Path("/"));
         root = rootnode;
 
+        storageServerCount = 0;
         pathStorageMap = new ConcurrentHashMap<Path, Set<Storage>>();
         storageCmdMap = new ConcurrentHashMap<Storage, Command>();
         regisSkel = new Skeleton<Registration>(Registration.class, this, new InetSocketAddress(NamingStubs.REGISTRATION_PORT));
@@ -386,6 +388,8 @@ public class NamingServer implements Service, Registration {
         checkForNull(client_stub, command_stub, files);
         if (storageCmdMap.containsKey(client_stub))
             throw new IllegalStateException("Storage server is " + "already registered");
+        this.storageServerCount++;
+
         ArrayList<Path> dupFiles = new ArrayList<Path>();
         // only adds paths to the tree if there are no duplicates
         for (Path p : files) {
@@ -415,6 +419,8 @@ public class NamingServer implements Service, Registration {
 
         return ret;
     }
+    
+    
 
     // checks parameters for null values, throws NullPointerException if nulls
     private void checkForNull(Object... objs) {
@@ -424,6 +430,11 @@ public class NamingServer implements Service, Registration {
                 throw new NullPointerException("cannot have a null parameter");
             }
         }
+    }
+
+    @Override
+    public int getStorageServerCount() {
+        return storageServerCount;
     }
 
 }
