@@ -47,5 +47,5 @@ public interface Registration {
      * @throws RMIException
      *             If the call cannot be completed due to a network error.
      */
-    public Path[] register(Storage client_stub, Command command_stub, Path[] files) throws RMIException;
+    public void register(Storage client_stub, Command command_stub, Path[] files) throws RMIException;
 }

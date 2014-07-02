@@ -1,5 +1,7 @@
 package storage;
 
+import static java.lang.System.out;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -119,13 +121,13 @@ public class StorageServer implements Storage, Command {
         Storage clientStub = (Storage) Stub.create(Storage.class, clientSkeleton, hostname);
         Command commandStub = (Command) Stub.create(Command.class, commandSkeleton, hostname);
         Path[] files = Path.list(root);
-        Path[] duplicateFiles = naming_server.register(clientStub, commandStub, files);
-        // delete all duplicate files
-        for (Path p : duplicateFiles) {
-            p.toFile(root).delete();
-            // prune all empty directories
-            deleteEmpty(new File(p.toFile(root).getParent()));
-        }
+        naming_server.register(clientStub, commandStub, files);
+        // // delete all duplicate files
+        // for (Path p : duplicateFiles) {
+        // p.toFile(root).delete();
+        // // prune all empty directories
+        // deleteEmpty(new File(p.toFile(root).getParent()));
+        // }
     }
 
     /*
@@ -178,6 +180,7 @@ public class StorageServer implements Storage, Command {
     @Override
     public synchronized byte[] read(Path file, long offset, int length) throws FileNotFoundException, IOException {
         File f = file.toFile(root);
+        out.println("the fire to read is " + f.toString());
         if (!f.exists() || f.isDirectory()) {
             throw new FileNotFoundException("File cannot be found or refers to" + "a directory");
         }
@@ -193,18 +196,35 @@ public class StorageServer implements Storage, Command {
         return output;
     }
 
+    @SuppressWarnings("resource")
+    @Override
+    public byte[] read(Path file) throws RMIException, FileNotFoundException, IOException {
+        File file2 = file.toFile(root);
+        out.println("file to be read is " + file.toString());
+        if (!file2.exists()) {
+            out.println("error file does not exists!");
+        }
+        InputStream reader = new FileInputStream(file2);
+
+        byte[] buffer = new byte[(int) file2.length()];
+
+        reader.read(buffer);
+
+        reader.close();
+        return buffer;
+    }
+
     @Override
     public synchronized void append(Path file, byte[] data) throws RMIException, FileNotFoundException, IOException {
         this.write(file, data, true);
     }
 
     @Override
-    public synchronized void write(Path file, byte[] data) throws RMIException, FileNotFoundException, IOException {
+    public void write(Path file, byte[] data) throws RMIException, FileNotFoundException, IOException {
         this.write(file, data, false);
     }
 
-    private synchronized void write(Path file, byte[] data, boolean append) throws RMIException, FileNotFoundException,
-            IOException {
+    private void write(Path file, byte[] data, boolean append) throws RMIException, FileNotFoundException, IOException {
         File f = file.toFile(root);
         if (!f.exists() || f.isDirectory()) {
             throw new FileNotFoundException("File cannot be found or refers to" + "a directory");
@@ -216,7 +236,7 @@ public class StorageServer implements Storage, Command {
     }
 
     @Override
-    public synchronized void write(Path file, long offset, byte[] data) throws FileNotFoundException, IOException {
+    public void write(Path file, long offset, byte[] data) throws FileNotFoundException, IOException {
         File f = file.toFile(root);
         if (!f.exists() || f.isDirectory()) {
             throw new FileNotFoundException("File cannot be found or refers to" + "a directory");
@@ -246,20 +266,26 @@ public class StorageServer implements Storage, Command {
 
     // The following methods are documented in Command.java.
     @Override
-    public synchronized boolean create(Path file) {
+    public boolean create(Path file) {
         if (file == null) {
             throw new NullPointerException("Given a null argument");
         }
         if (file.isRoot()) {
+            out.println("file is root!");
             return false;
         }
-        // obtains the parent of the given file
-        File parent = file.parent().toFile(root);
-        // ensures the parent is a directory
-        if (!parent.isDirectory()) {
-            delete(file.parent());
+
+        out.println("create file path is " + file.toString());
+
+        Path parent = file.parent();
+
+        // check parent dir exists
+        File parentFile = parent.toFile(root);
+
+        if (!parentFile.exists()) {
+            parentFile.mkdirs();
         }
-        parent.mkdirs();
+
         // creates the file
         File f = file.toFile(root);
         try {
@@ -298,22 +324,35 @@ public class StorageServer implements Storage, Command {
     }
 
     @Override
-    public synchronized boolean copy(Path file, Storage server) throws RMIException, FileNotFoundException, IOException {
+    public boolean copy(Path file, Storage server) throws RMIException, FileNotFoundException, IOException {
+
+        out.println("coming to copy!");
+
         // deletes the given file if it already exists on the server
         File f = file.toFile(root);
+        if (f.isDirectory()) {
+            return true;
+        }
         if (f.exists()) {
             delete(file);
         }
         // creates the file on this server and copies bytes over from the other
         create(file);
-        long fileSize = server.size(file);
-        long offset = 0;
-        while (offset < fileSize) {
-            int bytesToCopy = (int) Math.min(Integer.MAX_VALUE, fileSize - offset);
-            byte[] data = server.read(file, offset, bytesToCopy);
-            write(file, offset, data);
-            offset += bytesToCopy;
-        }
+
+        byte[] data = server.read(file);
+
+        this.write(file, data);
+
+        out.println("copy file done!");
+        //
+        // long fileSize = server.size(file);
+        // long offset = 0;
+        // while (offset < fileSize) {
+        // int bytesToCopy = (int) Math.min(Integer.MAX_VALUE, fileSize - offset);
+        // byte[] data = server.read(file, offset, bytesToCopy);
+        // write(file, offset, data);
+        // offset += bytesToCopy;
+        // }
         return true;
     }
 

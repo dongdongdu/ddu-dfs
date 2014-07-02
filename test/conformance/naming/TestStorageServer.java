@@ -12,7 +12,6 @@ import storage.Command;
 import storage.Storage;
 import test.Test;
 import test.TestFailed;
-import test.TestUtil;
 
 import common.Path;
 
@@ -113,14 +112,14 @@ class TestStorageServer implements Storage, Command {
         // Start storage server skeletons.
         startSkeletons();
         // Register the storage server with the naming server.
-        Path[] delete_files = naming_server.register(client_stub, command_stub, offer_files);
+        naming_server.register(client_stub, command_stub, offer_files);
 
-        // Check that the naming server replied with the approprite files.
-        if (expect_files != null) {
-            if (!TestUtil.sameElements(delete_files, expect_files)) {
-                throw new TestFailed("naming server did not command deletion " + "of the expected files");
-            }
-        }
+        // // Check that the naming server replied with the approprite files.
+        // if (expect_files != null) {
+        // if (!TestUtil.sameElements(delete_files, expect_files)) {
+        // throw new TestFailed("naming server did not command deletion " + "of the expected files");
+        // }
+        // }
 
         return client_stub;
     }
@@ -257,6 +256,12 @@ class TestStorageServer implements Storage, Command {
     public void randomWrite(Path file, int offset, byte[] data) throws RMIException, FileNotFoundException, IOException {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public byte[] read(Path file) throws FileNotFoundException, IOException {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

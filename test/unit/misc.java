@@ -2,9 +2,13 @@ package unit;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import naming.PathNode;
+import storage.Storage;
 
 import common.Path;
 
@@ -12,13 +16,26 @@ public class misc {
 
     public static void main(String[] args) throws FileNotFoundException {
 
-        Path p = new Path("/aa/bb/cc.txt");
+        Set<Storage> hasFile = Collections.newSetFromMap(new ConcurrentHashMap<Storage, Boolean>());
 
+        String s1 = "c:/aa/bb/cc.txt";
+        File fp = new File(s1);
+        try {
+            if (!fp.exists()) {
+                fp.mkdirs();
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+
+        Path p = new Path(s1);
         Path parent = p.parent();
         Iterator<String> iterator = p.iterator();
 
         String string = p.toString();
         String last = p.last();
+
+        Path p2 = new Path("c:/a/b/c");
 
         File file = p.toFile(new File("/aa"));
         System.out.println(file.toString());

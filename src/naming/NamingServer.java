@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,7 +40,8 @@ import common.Path;
  */
 public class NamingServer implements Service, Registration {
     PathNode root;
-    int storageServerCount;
+    Set<Storage> storageSets;
+
     ConcurrentHashMap<Path, Set<Storage>> pathStorageMap;
     ConcurrentHashMap<Storage, Command> storageCmdMap;
     Skeleton<Registration> regisSkel;
@@ -56,7 +58,7 @@ public class NamingServer implements Service, Registration {
         rootnode.setCurrPath(new Path("/"));
         root = rootnode;
 
-        storageServerCount = 0;
+        storageSets = Collections.newSetFromMap(new ConcurrentHashMap<Storage, Boolean>());
         pathStorageMap = new ConcurrentHashMap<Path, Set<Storage>>();
         storageCmdMap = new ConcurrentHashMap<Storage, Command>();
         regisSkel = new Skeleton<Registration>(Registration.class, this, new InetSocketAddress(NamingStubs.REGISTRATION_PORT));
@@ -384,22 +386,26 @@ public class NamingServer implements Service, Registration {
         }
     }
 
-    public Path[] register(Storage client_stub, Command command_stub, Path[] files) {
+    public void register(Storage client_stub, Command command_stub, Path[] files) {
         checkForNull(client_stub, command_stub, files);
-        if (storageCmdMap.containsKey(client_stub))
+        if (storageCmdMap.containsKey(client_stub)) {
             throw new IllegalStateException("Storage server is " + "already registered");
-        this.storageServerCount++;
+        }
+        out.println("new coming storage is " + client_stub.toString());
+        out.println("new coming command is " + command_stub.toString());
 
-        ArrayList<Path> dupFiles = new ArrayList<Path>();
-        // only adds paths to the tree if there are no duplicates
-        for (Path p : files) {
-            if (!p.isRoot()) {
-                if (!root.addFile(p.iterator())) {
-                    dupFiles.add(p);
-                } else {
-                    // not a duplicate, adds the storage server to the map
+        int size = storageSets.size();
+        out.println("current storage server count is: " + size);
+        if (size == 0) {
+            // The first registration comes here
+            for (Path p : files) {
+                if (!p.isRoot()) {
+                    boolean ret = root.addFile(p.iterator());
+                    if (!ret) {
+                        out.println("Erros: add path iterator to root fails!");
+                    }
                     if (pathStorageMap.containsKey(p)) {
-                        pathStorageMap.get(p).add(client_stub);
+                        out.println("Error: we already had a key????");
                     } else {
                         Set<Storage> hasFile = Collections.newSetFromMap(new ConcurrentHashMap<Storage, Boolean>());
                         hasFile.add(client_stub);
@@ -407,20 +413,61 @@ public class NamingServer implements Service, Registration {
                     }
                 }
             }
-        }
-        storageCmdMap.put(client_stub, command_stub);
-        // builds array of duplicate files so it can be returned
-        Path[] ret = new Path[dupFiles.size()];
-        int index = 0;
-        for (Path p : dupFiles) {
-            ret[index] = p;
-            index++;
+        } else {
+
+            Storage existStorage = getADiffStorage(client_stub);
+            out.println("existStorage is " + existStorage);
+            Command existCommand = getExistCommand(existStorage);
+            out.println("existCommand is " + existCommand);
+
+            // The new coming storage server comes here, first we will check each file from new server, if exist server does not
+            // have, copy from new to exist
+            for (Path path : files) {
+                if (!path.isRoot()) {
+                    if (root.addFile(path.iterator())) {
+                        // exists storage server does not have new file. copy from new to exist
+                        try {
+                            existCommand.copy(path, client_stub);
+                        } catch (Throwable e) {
+                            log("error when copy file from the new storage server to existing storage server!\n" + e.getMessage());
+                        }
+                        Set<Storage> hasFile = Collections.newSetFromMap(new ConcurrentHashMap<Storage, Boolean>());
+                        hasFile.add(existStorage);
+                        hasFile.add(client_stub);
+                        pathStorageMap.put(path, hasFile);
+                    } else { // exist storage server already had 1 copy of file. so now we have total 2 copies of file
+                        // just update the path storage map from 1 to 2
+                        pathStorageMap.get(path).add(client_stub);
+                    }
+                }
+            }
+
+            // Only if the new coming server is the second storage server, we will do a reverse check to make sure each file has 2
+            // copies.
+            // if this is the 3rd coming server. we don't need to do below steps.
+            if (size == 1) {
+                // Now we need to check each path file in pathStorageMap, if only 1 storage has file, copy to new storage server.
+                out.println("copy file from exists to new coming start!");
+                for (Path path : pathStorageMap.keySet()) {
+                    Set<Storage> storages = pathStorageMap.get(path);
+                    if (storages.size() == 1) {
+                        try {
+                            command_stub.copy(path, existStorage);
+                        } catch (Throwable e) {
+                            log("error when copy file from the exist storage server to new coming storage server!\n"
+                                    + e.getMessage());
+                        }
+                        storages.add(client_stub);
+                    }
+                }
+                out.println("copy file from exists to new coming done!");
+            }
         }
 
-        return ret;
+        storageSets.add(client_stub);
+        storageCmdMap.put(client_stub, command_stub);
+        out.println("New storage server has been registered!----------------------------\n");
     }
-    
-    
 
     // checks parameters for null values, throws NullPointerException if nulls
     private void checkForNull(Object... objs) {
@@ -434,7 +481,56 @@ public class NamingServer implements Service, Registration {
 
     @Override
     public int getStorageServerCount() {
-        return storageServerCount;
+        return storageSets.size();
+    }
+
+    private Storage getADiffStorage(Storage aStorage) {
+
+        Storage ret = null;
+
+        int size = storageSets.size();
+        if (size < 1) {
+            throw new NullPointerException("Error cannot find any storage registered!");
+        }
+        if (size == 1) {
+            ret = storageSets.iterator().next();
+            if (ret.equals(aStorage)) {
+                throw new NullPointerException("Error, input storage is the same as existing!");
+            }
+            return ret;
+        }
+
+        boolean flag = true;
+        while (flag) {
+            Random rnd = new Random();
+            int idx = rnd.nextInt(size);
+            Iterator<Storage> iterator = storageSets.iterator();
+            while (idx >= 0) {
+                ret = iterator.next();
+                idx--;
+            }
+            if (!ret.equals(aStorage)) {
+                flag = false;
+            }
+        }
+
+        if (ret == null) {
+            throw new NullPointerException("Error when get a existing storage!");
+        }
+        return ret;
+    }
+
+    private Command getExistCommand(Storage aStorage) {
+
+        Command ret = null;
+        if (storageCmdMap.containsKey(aStorage)) {
+            ret = storageCmdMap.get(aStorage);
+        }
+
+        if (ret == null) {
+            throw new NullPointerException("Error when get a existing command!");
+        }
+        return ret;
     }
 
 }
