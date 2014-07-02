@@ -1,14 +1,13 @@
 package apps;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 
 import naming.NamingStubs;
 import naming.Service;
+import storage.Storage;
 import Utils.Util;
-import client.DFSInputStream;
 
 /**
  * Retrieves a file stored on the distributed filesystem.
@@ -23,7 +22,7 @@ public class Get extends ClientApplication {
     /**
      * The size of each request for data cannot exceed <code>BLOCK_SIZE</code>.
      */
-    private static final int BLOCK_SIZE = 1024 * 1024;
+    private static final int BLOCK_SIZE = 10;
 
     /** Application entry point. */
     public static void main(String[] arguments) {
@@ -79,44 +78,20 @@ public class Get extends ClientApplication {
         // output stream for writing bytes to a local copy of the file.
         // Repeatedly read up to BLOCK_SIZE bytes from the remote file, and
         // write them to the local file.
-        byte[] read_buffer;
-        DFSInputStream input_stream = null;
         OutputStream output_stream = null;
 
         try {
-            read_buffer = new byte[BLOCK_SIZE];
+            Storage storage = naming_server.getStorage(source.path);
+            byte[] buffer = storage.read(source.path);
             output_stream = new FileOutputStream(destination);
-            input_stream = new DFSInputStream(naming_server, source.path);
+            output_stream.write(buffer);
+            System.out.println("Get file successfully");
 
-            int bytes_remaining = input_stream.available();
-            int bytes_to_transfer;
-            int bytes_read;
-
-            while (bytes_remaining > 0) {
-                bytes_to_transfer = bytes_remaining;
-                if (bytes_to_transfer > BLOCK_SIZE)
-                    bytes_to_transfer = BLOCK_SIZE;
-
-                bytes_read = input_stream.read(read_buffer, 0, bytes_to_transfer);
-                bytes_remaining = input_stream.available();
-
-                if (bytes_read <= 0)
-                    throw new EOFException("unexpected end of file");
-
-                // Write only as many bytes as were actually read.
-                output_stream.write(read_buffer, 0, bytes_read);
-            }
         } catch (Throwable t) {
             throw new ApplicationFailure("cannot transfer " + source + ": " + t.getMessage());
         } finally {
             // In all cases, make an effort to close all streams, and to
             // unlock the file.
-            if (input_stream != null) {
-                try {
-                    input_stream.close();
-                } catch (Throwable t) {
-                }
-            }
 
             if (output_stream != null) {
                 try {
