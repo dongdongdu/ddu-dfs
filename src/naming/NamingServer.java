@@ -471,7 +471,7 @@ public class NamingServer implements Service, Registration {
         out.println("new coming command is " + command_stub.toString());
 
         int size = storageSets.size();
-        out.println("current storage server count is: " + size);
+
         if (size == 0) {
             // The first registration comes here
             for (Path p : files) {
@@ -542,6 +542,7 @@ public class NamingServer implements Service, Registration {
 
         storageSets.add(client_stub);
         storageCmdMap.put(client_stub, command_stub);
+        out.println("current storage server count is: " + storageSets.size());
         out.println("New storage server has been registered!----------------------------\n");
     }
 
@@ -616,7 +617,7 @@ public class NamingServer implements Service, Registration {
         try {
             Storage aStorage = this.getStorage(file);
             return true;
-        } catch (FileNotFoundException e) {
+        } catch (Throwable e) {
             return false;
         }
     }

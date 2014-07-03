@@ -1,6 +1,7 @@
 package apps;
 
 import static Utils.Util.checkSourceFileCurrentDirecotry;
+import static java.lang.System.out;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,7 +9,6 @@ import java.io.InputStream;
 
 import naming.NamingStubs;
 import naming.Service;
-import client.DFSOutputStream;
 
 import common.Path;
 
@@ -43,7 +43,7 @@ public class RandomWrite extends ClientApplication {
         if (arguments.length != 3) {
 
             throw new ApplicationFailure("usage: rndw local_source_file upper_destination_file offset \n"
-                    + "example: rndr local.txt server.txt 5 ");
+                    + "example: rndw local.txt server.txt 5 ");
         }
 
         int offset = Integer.parseInt(arguments[2]);
@@ -74,6 +74,7 @@ public class RandomWrite extends ClientApplication {
 
         // Obtain a stub for the remote naming server.
         Service naming_server = NamingStubs.service(destination.hostname);
+        Path destination_path = destination.path;
 
         try {
             if (naming_server.isDirectory(destination.path)) {
@@ -85,10 +86,10 @@ public class RandomWrite extends ClientApplication {
 
         Path path_to_lock;
 
-        if (destination.path.isRoot())
-            path_to_lock = destination.path;
+        if (destination_path.isRoot())
+            path_to_lock = destination_path;
         else
-            path_to_lock = destination.path.parent();
+            path_to_lock = destination_path.parent();
 
         // Lock the parent of the destination path on the remote server.
         try {
@@ -99,38 +100,32 @@ public class RandomWrite extends ClientApplication {
 
         byte[] read_buffer;
         InputStream input_stream = null;
-        DFSOutputStream output_stream = null;
+
         try {
+            out.println("destination_path is: " + destination_path);
+
             // Obtain the size of the source file.
             long souce_size = source.length();
+
             // Allocate the temporary read buffer and open streams.
             read_buffer = new byte[(int) souce_size];
             input_stream = new FileInputStream(source);
             input_stream.read(read_buffer);
 
-            Path destination_path = destination.path;
-            output_stream = new DFSOutputStream(naming_server, destination_path);
-            output_stream.randomWrite(read_buffer, offset);
+            naming_server.randomWriteFile(destination_path, offset, read_buffer);
+            out.println("Done, all " + destination_path + " files on servers has been random writed with " + source.toString());
 
         } catch (Throwable t) {
             throw new ApplicationFailure("cannot transfer " + source + ": " + t.getMessage());
         } finally {
             // In all cases, make an effort to close all streams and unlock
             // the parent directory.
-            if (output_stream != null) {
-                try {
-                    output_stream.close();
-                } catch (Throwable t) {
-                }
-            }
-
             if (input_stream != null) {
                 try {
                     input_stream.close();
                 } catch (Throwable t) {
                 }
             }
-
             try {
                 naming_server.unlock(path_to_lock, true);
             } catch (Throwable t) {

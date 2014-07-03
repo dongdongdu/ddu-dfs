@@ -8,7 +8,10 @@ import java.io.OutputStream;
 
 import naming.NamingStubs;
 import naming.Service;
-import client.DFSInputStream;
+import rmi.RMIException;
+import storage.Storage;
+
+import common.Path;
 
 /**
  * Retrieves a file stored on the distributed filesystem.
@@ -63,17 +66,31 @@ public class RandomRead extends ClientApplication {
         String localString = arguments[3];
         localString = checkSourceFileCurrentDirecotry(localString);
         destination = new File(localString);
+        System.out.println("destination is " + destination);
 
         // If the destination file is a directory, get a path to a file in that
         // directory with the same name as the source file.
-        if (destination.isDirectory())
+        if (destination.isDirectory()) {
             destination = new File(destination, source.path.last());
+            System.out.println("destination is " + destination);
+        }
 
         // Get a stub for the naming server and lock the source file.
         Service naming_server = NamingStubs.service(source.hostname);
 
+        Path source_file = source.path;
+
         try {
-            naming_server.lock(source.path, false);
+            if (!naming_server.isFileExist(source_file)) {
+                throw new ApplicationFailure("cannot find your file on servers: " + source_file);
+            }
+        } catch (RMIException e) {
+            throw new ApplicationFailure("RMI error when checking file existence on servers: " + source_file + "\n"
+                    + e.getMessage());
+        }
+
+        try {
+            naming_server.lock(source_file, false);
         } catch (Throwable t) {
             throw new ApplicationFailure("cannot lock " + source + ": " + t.getMessage());
         }
@@ -82,30 +99,21 @@ public class RandomRead extends ClientApplication {
         // output stream for writing bytes to a local copy of the file.
         // Repeatedly read up to BLOCK_SIZE bytes from the remote file, and
         // write them to the local file.
-        byte[] read_buffer;
-        DFSInputStream input_stream = null;
+        byte[] data_buffer;
         OutputStream output_stream = null;
 
         try {
-
             output_stream = new FileOutputStream(destination);
-            input_stream = new DFSInputStream(naming_server, source.path);
-
-            read_buffer = input_stream.randomRead(offset, lenth);
-            output_stream.write(read_buffer);
+            Storage aStorage = naming_server.getStorage(source_file);
+            data_buffer = aStorage.randomRead(source_file, offset, lenth);
+            output_stream.write(data_buffer);
+            System.out.println("Done, the random reading has been stored at: " + destination.toString());
 
         } catch (Throwable t) {
             throw new ApplicationFailure("cannot transfer " + source + ": " + t.getMessage());
         } finally {
             // In all cases, make an effort to close all streams, and to
             // unlock the file.
-            if (input_stream != null) {
-                try {
-                    input_stream.close();
-                } catch (Throwable t) {
-                }
-            }
-
             if (output_stream != null) {
                 try {
                     output_stream.close();
