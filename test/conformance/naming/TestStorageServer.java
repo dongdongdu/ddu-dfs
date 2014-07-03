@@ -247,18 +247,6 @@ class TestStorageServer implements Storage, Command {
     }
 
     @Override
-    public byte[] randomRead(Path file, int offset, int length) throws FileNotFoundException, IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void randomWrite(Path file, int offset, byte[] data) throws RMIException, FileNotFoundException, IOException {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public byte[] read(Path file) throws FileNotFoundException, IOException {
         // TODO Auto-generated method stub
         return null;
@@ -268,6 +256,18 @@ class TestStorageServer implements Storage, Command {
     public boolean isFileExist(Path path) throws RMIException {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public byte[] randomRead(Path file, long offset, int length) throws RMIException, FileNotFoundException, IOException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void randomWrite(Path file, long offset, byte[] data) throws RMIException, FileNotFoundException, IOException {
+        // TODO Auto-generated method stub
+
     }
 
 }

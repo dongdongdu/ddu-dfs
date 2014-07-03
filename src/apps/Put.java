@@ -122,20 +122,14 @@ public class Put extends ClientApplication {
             } catch (FileNotFoundException e) {
             }
 
-            // Create a new file with the name of the destination file.
-            boolean createRes = naming_server.createFile(destination_path);
-            System.out.println("The destination file" + destination_path + "creation result is " + createRes);
-
             // Obtain the size of the source file.
             long souce_size = source.length();
 
             // Allocate the temporary read buffer and open streams.
             read_buffer = new byte[(int) souce_size];
             input_stream = new FileInputStream(source);
-            output_stream = new DFSOutputStream(naming_server, destination_path);
-
             input_stream.read(read_buffer);
-            output_stream.write(read_buffer);
+            naming_server.writeFile(destination_path, read_buffer);
 
         } catch (ApplicationFailure e) {
             throw e;

@@ -211,4 +211,10 @@ public interface Service {
     public Command getExistCommand(Storage aStorage) throws RMIException;
 
     public Storage getADiffStorage(Storage aStorage) throws RMIException;
+
+    public boolean writeFile(Path file, byte[] data) throws RMIException, FileNotFoundException;
+
+    public boolean appendFile(Path file, byte[] data) throws RMIException, FileNotFoundException;
+
+    public boolean randomWriteFile(Path file, long offset, byte[] data) throws RMIException, FileNotFoundException;
 }

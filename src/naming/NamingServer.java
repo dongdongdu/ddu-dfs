@@ -221,7 +221,27 @@ public class NamingServer implements Service, Registration {
 
     @Override
     public boolean createFile(Path file) throws RMIException, FileNotFoundException {
+        return this.writeFileHelper(file, new byte[0], 0, false, false);
+    }
 
+    @Override
+    public boolean writeFile(Path file, byte[] data) throws RMIException, FileNotFoundException {
+        return this.writeFileHelper(file, data, 0, false, false);
+    }
+
+    @Override
+    public boolean appendFile(Path file, byte[] data) throws RMIException, FileNotFoundException {
+        return this.writeFileHelper(file, data, 0, true, false);
+    }
+
+    @Override
+    public boolean randomWriteFile(Path file, long offset, byte[] data) throws RMIException, FileNotFoundException {
+        return this.writeFileHelper(file, data, offset, false, true);
+    }
+
+    private boolean writeFileHelper(Path file, byte[] data, long offset, boolean append, boolean randomwrite)
+            throws RMIException, FileNotFoundException {
+        // has implemented 2 copies fault tolerance
         checkForNull(file);
         if (file.isRoot()) {
             return false;
@@ -247,7 +267,18 @@ public class NamingServer implements Service, Registration {
             Command cmd = storageCmdMap.get(aStorage);
             try {
                 cmd.create(file);
-            } catch (RMIException e) {
+                if (randomwrite) { // random write file
+                    aStorage.randomWrite(file, offset, data);
+                } else {
+                    if (append) { // append file
+                        aStorage.append(file, data);
+                    } else { // overwrite file
+                        aStorage.write(file, data);
+                    }
+                }
+            } catch (Throwable e) {
+                String message = "error when write data to new created file!";
+                out.println(message);
                 return false;
             }
 
@@ -258,7 +289,18 @@ public class NamingServer implements Service, Registration {
                 Command secondCommand = storageCmdMap.get(secondStorage);
                 try {
                     secondCommand.create(file);
-                } catch (RMIException e) {
+                    if (randomwrite) { // random write file
+                        secondStorage.randomWrite(file, offset, data);
+                    } else {
+                        if (append) { // append file
+                            secondStorage.append(file, data);
+                        } else { // overwrite file
+                            secondStorage.write(file, data);
+                        }
+                    }
+                } catch (Throwable e) {
+                    String message = "error when write data to new created file!";
+                    out.println(message);
                     return false;
                 }
             }

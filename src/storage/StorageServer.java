@@ -357,7 +357,7 @@ public class StorageServer implements Storage, Command {
     }
 
     @Override
-    public synchronized byte[] randomRead(Path file, int offset, int length) throws RMIException, FileNotFoundException,
+    public synchronized byte[] randomRead(Path file, long offset, int length) throws RMIException, FileNotFoundException,
             IOException {
         File f = file.toFile(root);
         if (!f.exists() || f.isDirectory()) {
@@ -381,7 +381,7 @@ public class StorageServer implements Storage, Command {
 
     @SuppressWarnings("resource")
     @Override
-    public synchronized void randomWrite(Path file, int offset, byte[] data) throws RMIException, FileNotFoundException,
+    public synchronized void randomWrite(Path file, long offset, byte[] data) throws RMIException, FileNotFoundException,
             IOException {
         File f = file.toFile(root);
         if (!f.exists() || f.isDirectory()) {
