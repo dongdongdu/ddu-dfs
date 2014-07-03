@@ -70,12 +70,12 @@ public class Append extends ClientApplication {
         // be created in the root directory - but the root directory must be
         // locked. Otherwise, it is safe to try to lock the parent of the
         // destination path.
+        Path destination_path = destination.path;
         Path path_to_lock;
-
         if (destination.path.isRoot())
-            path_to_lock = destination.path;
+            path_to_lock = destination_path;
         else
-            path_to_lock = destination.path.parent();
+            path_to_lock = destination_path.parent();
 
         // Obtain a stub for the remote naming server.
         Service naming_server = NamingStubs.service(destination.hostname);
@@ -83,6 +83,7 @@ public class Append extends ClientApplication {
         // Lock the parent of the destination path on the remote server.
         try {
             naming_server.lock(path_to_lock, true);
+            out.println(path_to_lock + " has been locked: ");
         } catch (Throwable t) {
             throw new ApplicationFailure("cannot lock " + path_to_lock + ": " + t.getMessage());
         }
@@ -91,13 +92,10 @@ public class Append extends ClientApplication {
         InputStream input_stream = null;
 
         try {
-
             // Path to receive the new file. This will either be the destination
             // path as provided, or if the path refers to a directory, then a
             // new file within that directory.
-            Path destination_path = destination.path;
             out.println("destination_path is: " + destination_path);
-
             // Obtain the size of the source file.
             long souce_size = source.length();
 
@@ -105,6 +103,8 @@ public class Append extends ClientApplication {
             read_buffer = new byte[(int) souce_size];
             input_stream = new FileInputStream(source);
             input_stream.read(read_buffer);
+
+            out.println("start to append...");
             naming_server.appendFile(destination_path, read_buffer);
             out.println("Done, all " + destination_path + " files on servers has been appended with " + sourceFileString);
         } catch (Throwable t) {
