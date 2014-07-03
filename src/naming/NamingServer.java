@@ -221,26 +221,6 @@ public class NamingServer implements Service, Registration {
 
     @Override
     public boolean createFile(Path file) throws RMIException, FileNotFoundException {
-        return this.writeFileHelper(file, new byte[0], 0, false, false);
-    }
-
-    @Override
-    public boolean writeFile(Path file, byte[] data) throws RMIException, FileNotFoundException {
-        return this.writeFileHelper(file, data, 0, false, false);
-    }
-
-    @Override
-    public boolean appendFile(Path file, byte[] data) throws RMIException, FileNotFoundException {
-        return this.writeFileHelper(file, data, 0, true, false);
-    }
-
-    @Override
-    public boolean randomWriteFile(Path file, long offset, byte[] data) throws RMIException, FileNotFoundException {
-        return this.writeFileHelper(file, data, offset, false, true);
-    }
-
-    private boolean writeFileHelper(Path file, byte[] data, long offset, boolean append, boolean randomwrite)
-            throws RMIException, FileNotFoundException {
         // has implemented 2 copies fault tolerance
         checkForNull(file);
         if (file.isRoot()) {
@@ -267,18 +247,7 @@ public class NamingServer implements Service, Registration {
             Command cmd = storageCmdMap.get(aStorage);
             try {
                 cmd.create(file);
-                if (randomwrite) { // random write file
-                    aStorage.randomWrite(file, offset, data);
-                } else {
-                    if (append) { // append file
-                        aStorage.append(file, data);
-                    } else { // overwrite file
-                        aStorage.write(file, data);
-                    }
-                }
-            } catch (Throwable e) {
-                String message = "error when write data to new created file!";
-                out.println(message);
+            } catch (RMIException e) {
                 return false;
             }
 
@@ -289,18 +258,7 @@ public class NamingServer implements Service, Registration {
                 Command secondCommand = storageCmdMap.get(secondStorage);
                 try {
                     secondCommand.create(file);
-                    if (randomwrite) { // random write file
-                        secondStorage.randomWrite(file, offset, data);
-                    } else {
-                        if (append) { // append file
-                            secondStorage.append(file, data);
-                        } else { // overwrite file
-                            secondStorage.write(file, data);
-                        }
-                    }
-                } catch (Throwable e) {
-                    String message = "error when write data to new created file!";
-                    out.println(message);
+                } catch (RMIException e) {
                     return false;
                 }
             }
@@ -318,7 +276,81 @@ public class NamingServer implements Service, Registration {
         } else {
             throw new IllegalStateException();
         }
+    }
 
+    @Override
+    public boolean writeFile(Path file, byte[] data) throws RMIException, FileNotFoundException {
+        return this.writeFileHelper(file, data, -1, 1);
+    }
+
+    @Override
+    public boolean appendFile(Path file, byte[] data) throws RMIException, FileNotFoundException {
+        return this.writeFileHelper(file, data, -1, 2);
+    }
+
+    @Override
+    public boolean randomWriteFile(Path file, long offset, byte[] data) throws RMIException, FileNotFoundException {
+        return this.writeFileHelper(file, data, offset, 3);
+    }
+
+    /**
+     * fileOperation 1:WRITE, 2:APPEND, 3:RANDOMWRITE
+     * 
+     * @param file
+     * @param data
+     * @param offset
+     * @param fileOperation
+     * @return
+     * @throws RMIException
+     * @throws FileNotFoundException
+     */
+    private boolean writeFileHelper(Path file, byte[] data, long offset, int fileOperation) throws RMIException,
+            FileNotFoundException {
+        // has implemented 2 copies fault tolerance
+        checkForNull(file);
+        if (file.isRoot()) {
+            return false;
+        }
+        if (isDirectory(file)) {
+            throw new RMIException("The file to be written is a direcotry, file name is " + file);
+        }
+        if (!isFileExist(file)) {
+            throw new FileNotFoundException("cannot find file:" + file);
+        }
+
+        for (Storage storage : pathStorageMap.get(file)) {
+            // fileOperation 1:WRITE, 2:APPEND, 3:RANDOMWRITE
+            try {
+                switch (fileOperation) {
+                case 1:
+                    storage.write(file, data);
+                    break;
+                case 2:
+                    storage.append(file, data);
+                    break;
+                case 3:
+                    storage.randomWrite(file, offset, data);
+                    break;
+                default:
+                    break;
+                }
+
+            } catch (Throwable e) {
+                StringBuffer sb = new StringBuffer();
+                sb.append("error when writing file: ");
+                sb.append(file);
+                sb.append("\n");
+
+                sb.append("storage is ");
+                sb.append(storage.toString());
+                sb.append("\n");
+
+                sb.append(e.getMessage());
+                throw new RuntimeException(sb.toString());
+            }
+        }
+
+        return true;
     }
 
     @Override
@@ -577,6 +609,16 @@ public class NamingServer implements Service, Registration {
             throw new NullPointerException("Error when get a existing command!");
         }
         return ret;
+    }
+
+    @Override
+    public boolean isFileExist(Path file) {
+        try {
+            Storage aStorage = this.getStorage(file);
+            return true;
+        } catch (FileNotFoundException e) {
+            return false;
+        }
     }
 
 }

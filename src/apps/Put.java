@@ -9,7 +9,6 @@ import java.io.InputStream;
 
 import naming.NamingStubs;
 import naming.Service;
-import client.DFSOutputStream;
 
 import common.Path;
 
@@ -49,7 +48,6 @@ public class Put extends ClientApplication {
 
         String sourceFileString = arguments[0];
         String destiFileString = arguments[1];
-        String current;
 
         sourceFileString = checkSourceFileCurrentDirecotry(sourceFileString);
 
@@ -91,7 +89,6 @@ public class Put extends ClientApplication {
 
         byte[] read_buffer;
         InputStream input_stream = null;
-        DFSOutputStream output_stream = null;
 
         try {
             // Path to receive the new file. This will either be the destination
@@ -122,6 +119,10 @@ public class Put extends ClientApplication {
             } catch (FileNotFoundException e) {
             }
 
+            if (!naming_server.createFile(destination_path)) {
+                throw new Exception("Error when creating new file + " + destination_path);
+            }
+
             // Obtain the size of the source file.
             long souce_size = source.length();
 
@@ -131,6 +132,8 @@ public class Put extends ClientApplication {
             input_stream.read(read_buffer);
             naming_server.writeFile(destination_path, read_buffer);
 
+            System.out.println("Done! file " + sourceFileString + "has been uploaded to " + destination_path);
+
         } catch (ApplicationFailure e) {
             throw e;
         } catch (Throwable t) {
@@ -138,13 +141,6 @@ public class Put extends ClientApplication {
         } finally {
             // In all cases, make an effort to close all streams and unlock
             // the parent directory.
-            if (output_stream != null) {
-                try {
-                    output_stream.close();
-                } catch (Throwable t) {
-                }
-            }
-
             if (input_stream != null) {
                 try {
                     input_stream.close();

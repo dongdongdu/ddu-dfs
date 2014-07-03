@@ -217,4 +217,6 @@ public interface Service {
     public boolean appendFile(Path file, byte[] data) throws RMIException, FileNotFoundException;
 
     public boolean randomWriteFile(Path file, long offset, byte[] data) throws RMIException, FileNotFoundException;
+
+    public boolean isFileExist(Path file) throws RMIException;
 }
